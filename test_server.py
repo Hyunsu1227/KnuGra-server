@@ -294,6 +294,10 @@ def yes_get_grade_info(id):
     driver.find_element_by_css_selector('#KEES_2242_stuaFolder > a').click() # Keess>지도교수상담>전체상담내역 화면전환
     driver.find_element_by_css_selector('#KEES_2241_keesStuAdvcAll > a').click()
 
+    td = driver.find_element_by_css_selector("#wrap > div.contents > div.contents_box > div.contents_body > div.group_table.mb_30 > table > tbody > tr:nth-child(1) > td")
+    print(td.text)
+    get_grade_info_dic["공학상담"] = td.text
+    
     grade_dic["getGradeInfo"] = get_grade_info_dic
 
     print("현장실습: ", get_grade_info_dic["현장실습"])
