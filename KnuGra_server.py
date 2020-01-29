@@ -134,8 +134,33 @@ def yes_get_grade_info(id):
         if i == 6:
             break
         i += 1
-
     
+    req = driver.page_source
+    soup = BeautifulSoup(req, 'html.parser')
+    tr_list = soup.select('#tab_FU > table > tbody > tr')
+    
+    subject_list = ["교과목번호","개설학과","교과목명","교과구분","학점","학기","평점","재이수"]
+
+    complete_subject_list = []
+    i=0
+    j=0
+    for tr in tr_list:
+        td_list = tr.select("td")
+        if i >= 1:
+            subject_dic = {}
+            for td in td_list:
+                if not(td.text is None):
+                    subject_dic[subject_list[j]] = td.text
+                j+=1
+            complete_subject_list.append(subject_dic)
+        j=0
+        i+=1
+    if len(complete_subject_list) >= 1:
+        del complete_subject_list[-1]
+    grade_dic["completeSubjectList"] = complete_subject_list
+    #print(grade_dic["completeSubjectList"])
+
+    '''
     driver.execute_script("tab.selectTabPage( 'essentTab' );") # 필수과목 이수내역 클릭
 
     time.sleep(1)
@@ -190,6 +215,7 @@ def yes_get_grade_info(id):
         del design_subject_list[-1]
     grade_dic["designSubjectList"] = design_subject_list
     #print(grade_dic["설계"])
+    '''
 
     '''      
     driver.execute_script("tab.selectTabPage( 'essentTab' );") # 필수과목 이수내역 클릭
@@ -241,6 +267,7 @@ def yes_get_grade_info(id):
     driver = driver_hash[id]
     driver.find_element_by_css_selector('#KEES_2242_stunFolder > a').click() # Keess>학생수강 및 비교과활동>비교과활동 화면전환
     driver.find_element_by_css_selector('#KEES_2241_stunNonsubjMngt > a').click()
+    time.sleep(1)
 
     this_scene = driver #비교과 활동 화면 
 
@@ -293,11 +320,12 @@ def yes_get_grade_info(id):
     driver = driver_hash[id]
     driver.find_element_by_css_selector('#KEES_2242_stuaFolder > a').click() # Keess>지도교수상담>전체상담내역 화면전환
     driver.find_element_by_css_selector('#KEES_2241_keesStuAdvcAll > a').click()
+    time.sleep(1)
 
     td = driver.find_element_by_css_selector("#wrap > div.contents > div.contents_box > div.contents_body > div.group_table.mb_30 > table > tbody > tr:nth-child(1) > td")
     print(td.text)
     get_grade_info_dic["공학상담"] = td.text
-
+    
     grade_dic["getGradeInfo"] = get_grade_info_dic
 
     print("현장실습: ", get_grade_info_dic["현장실습"])
