@@ -18,9 +18,7 @@ import time
 
 driver_hash = {} 
 
-def yes_login(id, pwd):
-    #options.add_extension("/home/ubuntu/python/Block-image_v1.1.crx")
-    #driver = webdriver.Firefox(firefox_options=options, executable_path="/home/ubuntu/driver/geckodriver")
+def abeek_login(id, pwd): # abeek 사이트 접속 후 로그인
     if id in driver_hash :
         driver_hash[id].close()
         driver_hash[id].quit()
@@ -42,6 +40,60 @@ def yes_login(id, pwd):
         print(e)
     idForm.send_keys(id)
 
+    WebDriverWait(driver, 5).until(lambda browser: idForm.get_attribute('value') == id)
+
+    try:
+        pwdForm = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID, 'passwd')))
+    except Exception as e:
+        print(e)
+    pwdForm.send_keys(pwd)
+    WebDriverWait(driver, 5).until(lambda browser: pwdForm.get_attribute('value') == pwd)
+    
+    try:
+        pwdForm.send_keys(Keys.RETURN)
+        try:
+            WebDriverWait(driver, 1).until(EC.alert_is_present(),
+                                        'Timed out waiting for PA creation ' +
+                                        'confirmation popup to appear.')
+            Alert(driver).accept()
+            #print("alert accepted")
+            driver.close()
+            driver.quit()
+            return False
+        except TimeoutException: # success
+            #print("no alert")
+            driver_hash[id] = driver
+            print(driver_hash)
+            return True
+    except Exception as e:
+        print(e)
+        driver.close()
+        driver.quit()
+        return False
+    driver.close()
+    driver.quit()
+    return True
+
+def yes_login(id, pwd): # yes 사이트 접속 후 로그인
+    
+    if(id in driver_hash) :
+        return True
+
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    prefs  = {"profile.managed_default_content_settings.images": 2,"profile.default_content_settings.images": 2}
+    options.add_experimental_option("prefs", prefs)
+    driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", chrome_options=options)
+    driver.get('http://yes.knu.ac.kr/comm/comm/support/main/main.action')
+    #print(driver.current_url)
+    try:
+        idForm = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID,'usr_id')))
+    except Exception as e:
+        print(e)
+    idForm.send_keys(id)
     WebDriverWait(driver, 5).until(lambda browser: idForm.get_attribute('value') == id)
 
     try:
@@ -108,7 +160,7 @@ def yes_get_personal_info(id):
     
     return privacy_dic
 
-def yes_get_grade_info(id):
+def abeek_get_grade_info(id):
     if id in driver_hash :
         driver = driver_hash[id]
     else :
@@ -290,7 +342,7 @@ def yes_get_grade_info(id):
     if td.text == "합격":
         get_grade_info_dic["영어성적"] = "pass"
 
-    print("영어성적: ", get_grade_info_dic["영어성적"])
+    #print("영어성적: ", get_grade_info_dic["영어성적"])
 
     driver = this_scene
     tr_list = driver.find_elements_by_css_selector('#grid42 > div.data > table > tbody > tr')
@@ -323,12 +375,116 @@ def yes_get_grade_info(id):
     time.sleep(1)
 
     td = driver.find_element_by_css_selector("#wrap > div.contents > div.contents_box > div.contents_body > div.group_table.mb_30 > table > tbody > tr:nth-child(1) > td")
-    print(td.text)
+    #print(td.text)
     get_grade_info_dic["공학상담"] = td.text
     
     grade_dic["getGradeInfo"] = get_grade_info_dic
 
-    print("현장실습: ", get_grade_info_dic["현장실습"])
+    #print("현장실습: ", get_grade_info_dic["현장실습"])
+
+    # 로그아웃
+    if id in driver_hash :
+        driver_hash[id].close()
+        driver_hash[id].quit()
+        del driver_hash[id]        
+    else :
+        print("현재 로그인 하지 않은 아이디 입니다")
+
+    print("logout")
+    print(driver_hash)
+
+    return grade_dic
+
+def yes_get_grade_info(id):
+    if id in driver_hash :
+        driver = driver_hash[id]
+    else :
+        print("현재 로그인 하지 않은 아이디 입니다")
+        return []
+    
+    print(driver)
+
+    driver.execute_script("changeLangage('kor');")
+    time.sleep(1)
+    driver.execute_script("launchMenu( 'SCOR', '2241', 'certRecEnq', '/cour/scor/certRec/certRecEnq/list.action' );")
+    time.sleep(1)
+
+    grade_dic = {}
+
+    req = driver.page_source
+    soup = BeautifulSoup(req, 'html.parser')
+    tr_list = soup.select('#certRecEnqGrid > div.data > table > tbody > tr')
+    
+    subject_list = ["학기","교과구분","교과목번호","교과목명","학점","평점","점수"]
+
+    complete_subject_list = []
+    i=0
+    j=0
+    for tr in tr_list:
+        td_list = tr.select("td")
+        if i >= 1:
+            subject_dic = {}
+            for td in td_list:
+                if not(td.text is None):
+                    subject_dic[subject_list[j]] = td.text
+                j+=1
+            complete_subject_list.append(subject_dic)
+        j=0
+        i+=1
+    
+    grade_dic["completeSubjectList"] = complete_subject_list
+
+    grade_list = ["교양","교양필수","전공","전공기초","전공선택","전공필수","복수전공","부전공","연계전공","융합전공","전공심화","기초공통","자유선택","일반선택","교직","선수과목","공학전공","전공기반","기본소양","전문교양","교과교육","이수합계","성적평균","평점평균"]
+    
+    tr_list = driver.find_elements_by_css_selector("#certRecStatsGrid > div.data > table > tbody > tr")
+    td_list = tr_list[-1].find_elements_by_css_selector("td")
+    
+    get_grade_info_dic = {}
+
+    sum =  0
+    i = 0
+    for td in td_list :
+        if i > 0 and td.text != '':
+            get_grade_info_dic[grade_list[i - 1]] = td.text
+        if  (i >=17 and i <= 20 and td.text != ''):
+            sum += int(td.text)
+        i += 1
+    
+    if("전공" in get_grade_info_dic) :
+        major = int(get_grade_info_dic[grade_list[grade_list.index("전공")]])
+    else :
+        major = 0
+    if "공학전공" in get_grade_info_dic :
+        major += int(get_grade_info_dic[grade_list[grade_list.index("공학전공")]])
+    get_grade_info_dic["전공"] = str(major)
+
+    if("교양" in get_grade_info_dic) :
+        culture = int(get_grade_info_dic[grade_list[grade_list.index("교양")]])
+    else :
+        culture = 0
+    
+    if("전공기반" in get_grade_info_dic) :
+        culture += int(get_grade_info_dic[grade_list[grade_list.index("전공기반")]])
+    if("기본소양" in get_grade_info_dic) :
+        culture += int(get_grade_info_dic[grade_list[grade_list.index("기본소양")]])
+    get_grade_info_dic["교양"] = str(culture)
+
+    
+    get_grade_info_dic["전공"] = str(major)
+    driver.execute_script("launchMenu( 'SMAR', '2241', 'stuAdvcAll', '/stud/smar/advcStu/stuAdvcAll/list.action' );") 
+    td_list = driver.find_elements_by_css_selector("#content > table > tbody > tr:nth-child(2) > td")
+    
+    i = 0
+    counsel_list = ["상담","공학상담"]
+    for td in td_list :
+        get_grade_info_dic[counsel_list[i]] = (td.text)[0]
+        i += 1
+
+    get_grade_info_dic["상담"] = str(int(get_grade_info_dic["상담"]) + int(get_grade_info_dic["공학상담"]))
+
+    get_grade_info_dic["공학인증"] = str(sum)
+    grade_dic["getGradeInfo"] = get_grade_info_dic
+    #print(grade_dic)
 
     # 로그아웃
     if id in driver_hash :
@@ -350,8 +506,30 @@ def handle_client(connectionSock, addr):
     print(inputdic)
 
     req = inputdic['requestType']
+    major = inputdic['major']
   
-    if (req == "login") :
+    if (req == "login") and (major == "abeek"): # 심컴이 로그인 요청
+        id = inputdic['id']
+        pwd = inputdic['pwd']
+
+        login_on = abeek_login(id,pwd)
+        if(login_on):
+            outputdic = {"login":"success"}
+            jsonstr = json.dumps(outputdic)
+        else:
+            outputdic = {"login":"fail"}
+            jsonstr = json.dumps(outputdic)
+
+        connectionSock.send(jsonstr.encode()) 
+    elif (req == "getGradeInfo") and (major == "abeek"): # 심컴이 성적 정보 요청
+        id = inputdic['id']
+
+        outputdic = abeek_get_grade_info(id)
+
+        jsonstr = json.dumps(outputdic)
+
+        connectionSock.send(jsonstr.encode())
+    elif (req == "login") and (major == "global"): # 글솦이 로그인 요청
         id = inputdic['id']
         pwd = inputdic['pwd']
 
@@ -364,7 +542,7 @@ def handle_client(connectionSock, addr):
             jsonstr = json.dumps(outputdic)
 
         connectionSock.send(jsonstr.encode()) 
-    elif (req == "getGradeInfo") :
+    elif (req == "getGradeInfo") and (major == "global"): # 글솦이 성적 정보 요청
         id = inputdic['id']
 
         outputdic = yes_get_grade_info(id)

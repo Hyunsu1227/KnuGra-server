@@ -4,11 +4,11 @@ import socket
 import threading
 
 clientSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-clientSock.connect(('127.0.0.1', 3456))
+clientSock.connect(('127.0.0.1', 4567))
 
 print('연결 확인 됐습니다.')
 
-dic = {'requestType':"getGradeInfo","id":""}
+dic = {'requestType':"getGradeInfo","id":"","major":"abeek"}
 jsonstr = json.dumps(dic)
 print(jsonstr)
 clientSock.send(jsonstr.encode())
