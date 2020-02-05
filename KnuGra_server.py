@@ -18,6 +18,11 @@ import time
 
 driver_hash = {} 
 
+NO_PROBLEM = 0
+ID_PASSWARD_INCORRECT = 1
+PASSWORD_CHANGE_DATE_THREE_MONTHS = 2
+EXCEPTION = 3
+
 def abeek_login(id, pwd): # abeek 사이트 접속 후 로그인
     if id in driver_hash :
         driver_hash[id].close()
@@ -55,24 +60,28 @@ def abeek_login(id, pwd): # abeek 사이트 접속 후 로그인
             WebDriverWait(driver, 1).until(EC.alert_is_present(),
                                         'Timed out waiting for PA creation ' +
                                         'confirmation popup to appear.')
+            print(Alert(driver).text)
+            if("PASSWORD 변경일이 3개월이 지났습니다." in Alert(driver).text ) :
+                return False, PASSWORD_CHANGE_DATE_THREE_MONTHS
+
             Alert(driver).accept()
             #print("alert accepted")
             driver.close()
             driver.quit()
-            return False
+            return False, ID_PASSWARD_INCORRECT
         except TimeoutException: # success
             #print("no alert")
             driver_hash[id] = driver
             print(driver_hash)
-            return True
+            return True, NO_PROBLEM
     except Exception as e:
         print(e)
         driver.close()
         driver.quit()
-        return False
+        return False, EXCEPTION
     driver.close()
     driver.quit()
-    return True
+    return True, EXCEPTION
 
 def yes_login(id, pwd): # yes 사이트 접속 후 로그인
     
@@ -109,24 +118,27 @@ def yes_login(id, pwd): # yes 사이트 접속 후 로그인
             WebDriverWait(driver, 1).until(EC.alert_is_present(),
                                         'Timed out waiting for PA creation ' +
                                         'confirmation popup to appear.')
+            print(Alert(driver).text)
+            if("PASSWORD 변경일이 3개월이 지났습니다." in Alert(driver).text ) :
+                return False, PASSWORD_CHANGE_DATE_THREE_MONTHS
             Alert(driver).accept()
             #print("alert accepted")
             driver.close()
             driver.quit()
-            return False
+            return False, ID_PASSWARD_INCORRECT
         except TimeoutException: # success
             #print("no alert")
             driver_hash[id] = driver
             print(driver_hash)
-            return True
+            return True, NO_PROBLEM
     except Exception as e:
         print(e)
         driver.close()
         driver.quit()
-        return False
+        return False, EXCEPTION
     driver.close()
     driver.quit()
-    return True
+    return True, EXCEPTION
 
 def yes_get_personal_info(id):
     if id in driver_hash :
@@ -410,9 +422,21 @@ def yes_get_grade_info(id):
     time.sleep(1)
 
     grade_dic = {}
+    get_grade_info_dic = {}
 
     req = driver.page_source
     soup = BeautifulSoup(req, 'html.parser')
+    td_list = soup.select("#certRecAcadStatsGrid_0 > td")
+
+    cheongSeong_culture_list = ["첨성인기초 - 독서와토론", "첨성인기초 - 사고교육", "첨성인기초 - 글쓰기", "첨성인기초 - 실용영어",
+        "첨성인기초 - 소프트웨어", "첨성인핵심 - 인문사회", "첨성인핵심 - 자연과학", "첨성인일반", "없음", "비고(인문교양)"]
+    i = 0
+    if(len(td_list) > 0):
+        for td in td_list:
+            if td.text != '' and i != 8:
+                get_grade_info_dic[cheongSeong_culture_list[i]] = td.text
+            i+=1
+    #print(get_grade_info_dic)
     tr_list = soup.select('#certRecEnqGrid > div.data > table > tbody > tr')
     
     subject_list = ["학기","교과구분","교과목번호","교과목명","학점","평점","점수"]
@@ -439,8 +463,6 @@ def yes_get_grade_info(id):
     tr_list = driver.find_elements_by_css_selector("#certRecStatsGrid > div.data > table > tbody > tr")
     td_list = tr_list[-1].find_elements_by_css_selector("td")
     
-    get_grade_info_dic = {}
-
     sum =  0
     i = 0
     for td in td_list :
@@ -512,12 +534,12 @@ def handle_client(connectionSock, addr):
         id = inputdic['id']
         pwd = inputdic['pwd']
 
-        login_on = abeek_login(id,pwd)
+        login_on, errorCode = abeek_login(id,pwd)
         if(login_on):
             outputdic = {"login":"success"}
             jsonstr = json.dumps(outputdic)
         else:
-            outputdic = {"login":"fail"}
+            outputdic = {"login":"fail" , "errorCode":errorCode} 
             jsonstr = json.dumps(outputdic)
 
         connectionSock.send(jsonstr.encode()) 
@@ -533,12 +555,12 @@ def handle_client(connectionSock, addr):
         id = inputdic['id']
         pwd = inputdic['pwd']
 
-        login_on = yes_login(id,pwd)
+        login_on, errorCode = yes_login(id,pwd)
         if(login_on):
             outputdic = {"login":"success"}
             jsonstr = json.dumps(outputdic)
         else:
-            outputdic = {"login":"fail"}
+            outputdic = {"login":"fail", "errorCode":errorCode}
             jsonstr = json.dumps(outputdic)
 
         connectionSock.send(jsonstr.encode()) 
