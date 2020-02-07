@@ -343,7 +343,7 @@ def abeek_get_grade_info(id):
         if i >= 1:
             td_list = tr.find_elements_by_css_selector("td")
             if(len(td_list) > 1) :
-                print(td_list[10].text)
+                #print(td_list[10].text)
                 if td_list[10].text == "승인":
                     get_grade_info_dic["영어성적"] = "pass"
         i+=1
@@ -364,7 +364,7 @@ def abeek_get_grade_info(id):
         if i >= 1:
             td_list = tr.find_elements_by_css_selector("td")
             if(len(td_list) > 1) :
-                print(td_list[3].text)
+                #print(td_list[3].text)
                 sum_filed_trip += int(td_list[3].text)
         i+=1
     
@@ -379,7 +379,7 @@ def abeek_get_grade_info(id):
                 sum_filed_trip += float(td_list[3].text)
             
         i+=1
-    get_grade_info_dic["현장실습"] = str(sum_filed_trip)
+    get_grade_info_dic["현장실습"] = str(int(sum_filed_trip))
 
     driver = driver_hash[id]
     driver.find_element_by_css_selector('#KEES_2242_stuaFolder > a').click() # Keess>지도교수상담>전체상담내역 화면전환
@@ -387,8 +387,10 @@ def abeek_get_grade_info(id):
     time.sleep(1)
 
     td = driver.find_element_by_css_selector("#wrap > div.contents > div.contents_box > div.contents_body > div.group_table.mb_30 > table > tbody > tr:nth-child(1) > td")
-    #print(td.text)
-    get_grade_info_dic["공학상담"] = td.text
+
+    counsel = td.text[0:-1]
+    #print(counsel)
+    get_grade_info_dic["공학상담"] = counsel
     
     grade_dic["getGradeInfo"] = get_grade_info_dic
 
