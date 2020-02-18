@@ -408,7 +408,7 @@ def abeek_get_grade_info(id):
     print(driver_hash)
 
     return grade_dic
-    
+
 def yes_get_grade_info(id):
     if id in driver_hash :
         driver = driver_hash[id]
@@ -430,14 +430,27 @@ def yes_get_grade_info(id):
     soup = BeautifulSoup(req, 'html.parser')
     td_list = soup.select("#certRecAcadStatsGrid_0 > td")
 
+    cheongSeong_culture_dic = {}
+    cheongSeong_basic_dic = {}
+    cheongSeong_core_dic = {}
+    cheongSeong_basic_list = ["독서와토론","사고교육","글쓰기","실용영어","소프트웨어"]
+    cheongSeong_core_list = ["인문사회", "자연과학"]
     cheongSeong_culture_list = ["첨성인기초 - 독서와토론", "첨성인기초 - 사고교육", "첨성인기초 - 글쓰기", "첨성인기초 - 실용영어",
         "첨성인기초 - 소프트웨어", "첨성인핵심 - 인문사회", "첨성인핵심 - 자연과학", "첨성인일반", "없음", "비고(인문교양)"]
     i = 0
     if(len(td_list) > 0):
         for td in td_list:
-            if td.text != '' and i != 8:
-                get_grade_info_dic[cheongSeong_culture_list[i]] = td.text
+            if td.text != '' and i <= 4:
+                cheongSeong_basic_dic[cheongSeong_basic_list[i]] = td.text
+            if td.text != '' and i <= 6 and i > 4 :
+                cheongSeong_core_dic[cheongSeong_core_list[i-5]] = td.text
+            if td.text != '' and i > 6 and i != 8:
+                cheongSeong_culture_dic[cheongSeong_culture_list[i]] = td.text
             i+=1
+    
+    cheongSeong_culture_dic["첨성인기초"] = cheongSeong_basic_dic
+    cheongSeong_culture_dic["첨성인핵심"] = cheongSeong_core_dic
+    grade_dic["첨성인교양"] = cheongSeong_culture_dic
     #print(get_grade_info_dic)
     tr_list = soup.select('#certRecEnqGrid > div.data > table > tbody > tr')
     
@@ -460,7 +473,7 @@ def yes_get_grade_info(id):
     
     grade_dic["completeSubjectList"] = complete_subject_list
 
-    grade_list = ["교양","교양필수","전공","전공기초","전공선택","전공필수","복수전공","부전공","연계전공","융합전공","전공심화","기초공통","자유선택","일반선택","교직","선수과목","공학전공","전공기반","기본소양","전문교양","교과교육","이수합계","성적평균","평점평균"]
+    grade_list = ["교양","교양필수","전공","전공기초","전공선택","전공필수","복수전공","부전공","연계전공","융합전공","전공심화","기초공통","자유선택","일반선택","교직","선수과목","공학전공","전공기반","기본소양","전문교양","교과교육","이수학점","성적평균","평점평균"]
     
     tr_list = driver.find_elements_by_css_selector("#certRecStatsGrid > div.data > table > tbody > tr")
     td_list = tr_list[-1].find_elements_by_css_selector("td")
@@ -505,8 +518,8 @@ def yes_get_grade_info(id):
         i += 1
 
     get_grade_info_dic["상담"] = str(int(get_grade_info_dic["상담"]) + int(get_grade_info_dic["공학상담"]))
-
-    get_grade_info_dic["공학인증"] = str(sum)
+    
+    #get_grade_info_dic["공학인증"] = str(sum)
     grade_dic["getGradeInfo"] = get_grade_info_dic
     #print(grade_dic)
 
@@ -527,7 +540,7 @@ def handle_client(connectionSock, addr):
     print("connect")
     data = connectionSock.recv(1024)
     inputdic = json.loads(data)
-    print(inputdic)
+    #print(inputdic)
 
     req = inputdic['requestType']
     major = inputdic['major']
