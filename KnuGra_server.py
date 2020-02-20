@@ -456,24 +456,28 @@ def yes_get_grade_info(id):
     '''
 
     cheongSeong_basic_sum = 0
-    cheongSeong_core_sum = 0
-    cheongSeong_nature = 0
+    cheongSeong_core_human = 0
+    cheongSeong_core_nature = 0
+    cheongSeong_human = 0
 
     i = 0
     if(len(td_list) > 0):
         for td in td_list:
-            if td.text != '' and i <= 4:
+            if td.text != '' and i <= 2:
                 cheongSeong_basic_sum += int(td.text)
-            if td.text != '' and i >= 5 and i <=6 :
-                cheongSeong_core_sum += int(td.text)
+            if td.text != '' and i == 5:
+                cheongSeong_core_human += int(td.text)
+            if td.text != '' and i == 6:
+                cheongSeong_core_nature += int(td.text)
             if td.text != '' and i == 9:
-                cheongSeong_nature += int(td.text)
+                cheongSeong_human += int(td.text)
             i+=1
 
     get_grade_info_dic["첨성인기초"] = cheongSeong_basic_sum
-    get_grade_info_dic["첨성인핵심"] = cheongSeong_core_sum
-    get_grade_info_dic["인문교양"] = cheongSeong_nature
-    #print(get_grade_info_dic)
+    get_grade_info_dic["첨성인핵심-인문사회"] = cheongSeong_core_human
+    get_grade_info_dic["첨성인핵심-자연과학"] = cheongSeong_core_nature
+    get_grade_info_dic["인문교양"] = cheongSeong_human
+
     tr_list = soup.select('#certRecEnqGrid > div.data > table > tbody > tr')
     
     subject_list = ["학기","교과구분","교과목번호","교과목명","학점","평점","점수"]
@@ -530,6 +534,7 @@ def yes_get_grade_info(id):
 
     
     get_grade_info_dic["전공"] = str(major)
+
     driver.execute_script("launchMenu( 'SMAR', '2241', 'stuAdvcAll', '/stud/smar/advcStu/stuAdvcAll/list.action' );") 
     td_list = driver.find_elements_by_css_selector("#content > table > tbody > tr:nth-child(2) > td")
     
@@ -538,7 +543,6 @@ def yes_get_grade_info(id):
     for td in td_list :
         get_grade_info_dic[counsel_list[i]] = (td.text)[0]
         i += 1
-
     get_grade_info_dic["상담"] = str(int(get_grade_info_dic["상담"]) + int(get_grade_info_dic["공학상담"]))
     
     #get_grade_info_dic["공학인증"] = str(sum)
