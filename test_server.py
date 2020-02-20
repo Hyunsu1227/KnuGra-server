@@ -429,7 +429,7 @@ def yes_get_grade_info(id):
     req = driver.page_source
     soup = BeautifulSoup(req, 'html.parser')
     td_list = soup.select("#certRecAcadStatsGrid_0 > td")
-
+    '''
     cheongSeong_culture_dic = {}
     cheongSeong_basic_dic = {}
     cheongSeong_core_dic = {}
@@ -437,6 +437,8 @@ def yes_get_grade_info(id):
     cheongSeong_core_list = ["인문사회", "자연과학"]
     cheongSeong_culture_list = ["첨성인기초 - 독서와토론", "첨성인기초 - 사고교육", "첨성인기초 - 글쓰기", "첨성인기초 - 실용영어",
         "첨성인기초 - 소프트웨어", "첨성인핵심 - 인문사회", "첨성인핵심 - 자연과학", "첨성인일반", "없음", "비고(인문교양)"]
+
+    
     i = 0
     if(len(td_list) > 0):
         for td in td_list:
@@ -451,6 +453,26 @@ def yes_get_grade_info(id):
     cheongSeong_culture_dic["첨성인기초"] = cheongSeong_basic_dic
     cheongSeong_culture_dic["첨성인핵심"] = cheongSeong_core_dic
     grade_dic["첨성인교양"] = cheongSeong_culture_dic
+    '''
+
+    cheongSeong_basic_sum = 0
+    cheongSeong_core_sum = 0
+    cheongSeong_nature = 0
+
+    i = 0
+    if(len(td_list) > 0):
+        for td in td_list:
+            if td.text != '' and i <= 4:
+                cheongSeong_basic_sum += int(td.text)
+            if td.text != '' and i >= 5 and i <=6 :
+                cheongSeong_core_sum += int(td.text)
+            if td.text != '' and i == 9:
+                cheongSeong_nature += int(td.text)
+            i+=1
+
+    get_grade_info_dic["첨성인기초"] = cheongSeong_basic_sum
+    get_grade_info_dic["첨성인핵심"] = cheongSeong_core_sum
+    get_grade_info_dic["인문교양"] = cheongSeong_nature
     #print(get_grade_info_dic)
     tr_list = soup.select('#certRecEnqGrid > div.data > table > tbody > tr')
     
