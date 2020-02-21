@@ -456,6 +456,8 @@ def yes_get_grade_info(id):
     '''
 
     cheongSeong_basic_sum = 0
+    cheongSeong_basic_software = 0
+    cheongSeong_basic_english = 0
     cheongSeong_core_human = 0
     cheongSeong_core_nature = 0
     cheongSeong_human = 0
@@ -465,6 +467,10 @@ def yes_get_grade_info(id):
         for td in td_list:
             if td.text != '' and i <= 2:
                 cheongSeong_basic_sum += int(td.text)
+            if td.text != '' and i == 3:
+                cheongSeong_basic_english += int(td.text)
+            if td.text != '' and i == 4:
+                cheongSeong_basic_software += int(td.text)
             if td.text != '' and i == 5:
                 cheongSeong_core_human += int(td.text)
             if td.text != '' and i == 6:
@@ -474,6 +480,8 @@ def yes_get_grade_info(id):
             i+=1
 
     get_grade_info_dic["첨성인기초"] = cheongSeong_basic_sum
+    get_grade_info_dic["첨성인기초-실용영어"] = cheongSeong_basic_english
+    get_grade_info_dic["첨성인기초-소프트웨어"] = cheongSeong_basic_software
     get_grade_info_dic["첨성인핵심-인문사회"] = cheongSeong_core_human
     get_grade_info_dic["첨성인핵심-자연과학"] = cheongSeong_core_nature
     get_grade_info_dic["인문교양"] = cheongSeong_human
@@ -501,6 +509,7 @@ def yes_get_grade_info(id):
 
     grade_list = ["교양","교양필수","전공","전공기초","전공선택","전공필수","복수전공","부전공","연계전공","융합전공","전공심화","기초공통","자유선택","일반선택","교직","선수과목","공학전공","전공기반","기본소양","전문교양","교과교육","이수학점","성적평균","평점평균"]
     
+    time.sleep(1)
     tr_list = driver.find_elements_by_css_selector("#certRecStatsGrid > div.data > table > tbody > tr")
     td_list = tr_list[-1].find_elements_by_css_selector("td")
     
@@ -548,7 +557,8 @@ def yes_get_grade_info(id):
     #get_grade_info_dic["공학인증"] = str(sum)
     grade_dic["getGradeInfo"] = get_grade_info_dic
     #print(grade_dic)
-
+    #print(get_grade_info_dic)
+    
     # 로그아웃
     if id in driver_hash :
         driver_hash[id].close()
