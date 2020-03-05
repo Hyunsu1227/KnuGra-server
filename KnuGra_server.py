@@ -14,7 +14,6 @@ import socket
 import threading
 import requests
 import time
-import logging
 
 driver_hash = {}
 
@@ -65,14 +64,14 @@ def abeek_login(id, pwd): # abeek login
                 return False, PASSWORD_CHANGE_DATE_THREE_MONTHS
 
             Alert(driver).accept()
-            #print("alert accepted")
+            
             driver.close()
             driver.quit()
             return False, ID_PASSWARD_INCORRECT
         except TimeoutException: # success
-            #print("no alert")
+            
             driver_hash[id] = driver
-            print(driver_hash)
+            
             return True, NO_PROBLEM
     except Exception as e:
         print(e)
@@ -98,7 +97,7 @@ def yes_login(id, pwd): # yes 사이트 접속 후 로그인
     options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", chrome_options=options)
     driver.get('http://yes.knu.ac.kr/comm/comm/support/main/main.action')
-    #print(driver.current_url)
+    
     
     try:
         idForm = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID,'usr_id')))
@@ -120,18 +119,18 @@ def yes_login(id, pwd): # yes 사이트 접속 후 로그인
             WebDriverWait(driver, 1).until(EC.alert_is_present(),
                                         'Timed out waiting for PA creation ' +
                                         'confirmation popup to appear.')
-            print(Alert(driver).text)
+            
             if("PASSWORD 변경일이 3개월이 지났습니다." in Alert(driver).text ) :
                 return False, PASSWORD_CHANGE_DATE_THREE_MONTHS
             Alert(driver).accept()
-            #print("alert accepted")
+            
             driver.close()
             driver.quit()
             return False, ID_PASSWARD_INCORRECT
         except TimeoutException: # success
-            #print("no alert")
+            
             driver_hash[id] = driver
-            print(driver_hash)
+            
             return True, NO_PROBLEM
     except Exception as e:
         print(e)
@@ -146,10 +145,9 @@ def abeek_get_grade_info(id):
     if id in driver_hash :
         driver = driver_hash[id]
     else :
-        print("현재 로그인 하지 않은 아이디 입니다")
+        print( "abeek_get_grade_info : " + id + " | 현재 로그인 하지 않은 아이디 입니다")
         return []
     
-    print(driver)
 
     driver.find_element_by_css_selector('#KEES_2242_stueFolder > a').click()
     driver.find_element_by_css_selector('#KEES_2241_stueStuRecEnq > a').click()
@@ -192,7 +190,7 @@ def abeek_get_grade_info(id):
     if len(complete_subject_list) >= 1:
         del complete_subject_list[-1]
     grade_dic["completeSubjectList"] = complete_subject_list
-    #print(grade_dic["completeSubjectList"])
+    
 
     driver = driver_hash[id]
     driver.find_element_by_css_selector('#KEES_2242_stunFolder > a').click() # Keess>학생수강 및 비교과활동>비교과활동 화면전환
@@ -209,7 +207,7 @@ def abeek_get_grade_info(id):
         if i >= 1:
             td_list = tr.find_elements_by_css_selector("td")
             if(len(td_list) > 1) :
-                #print(td_list[10].text)
+                
                 if td_list[10].text == "승인":
                     get_grade_info_dic["영어성적"] = "pass"
         i+=1
@@ -220,7 +218,6 @@ def abeek_get_grade_info(id):
     if td.text == "합격":
         get_grade_info_dic["영어성적"] = "pass"
 
-    #print("영어성적: ", get_grade_info_dic["영어성적"])
 
     driver = this_scene
     tr_list = driver.find_elements_by_css_selector('#grid42 > div.data > table > tbody > tr')
@@ -230,7 +227,7 @@ def abeek_get_grade_info(id):
         if i >= 1:
             td_list = tr.find_elements_by_css_selector("td")
             if(len(td_list) > 1) :
-                #print(td_list[3].text)
+                
                 sum_filed_trip += int(td_list[3].text)
         i+=1
     
@@ -241,7 +238,7 @@ def abeek_get_grade_info(id):
         if i >= 1:
             td_list = tr.find_elements_by_css_selector("td")
             if(len(td_list) > 1) :
-                #print(td_list[3].text)
+                
                 sum_filed_trip += float(td_list[3].text)
             
         i+=1
@@ -255,12 +252,10 @@ def abeek_get_grade_info(id):
     td = driver.find_element_by_css_selector("#wrap > div.contents > div.contents_box > div.contents_body > div.group_table.mb_30 > table > tbody > tr:nth-child(1) > td")
 
     counsel = td.text[0:-2]
-    #print(counsel)
+    
     get_grade_info_dic["공학상담"] = counsel
     
     grade_dic["getGradeInfo"] = get_grade_info_dic
-
-    #print("현장실습: ", get_grade_info_dic["현장실습"])
 
     # 로그아웃
     if id in driver_hash :
@@ -268,10 +263,7 @@ def abeek_get_grade_info(id):
         driver_hash[id].quit()
         del driver_hash[id]
     else :
-        print("현재 로그인 하지 않은 아이디 입니다")
-
-    print("logout")
-    print(driver_hash)
+        print( "abeek_get_grade_info_logout : " + id + " | 현재 로그인 하지 않은 아이디 입니다")
 
     return grade_dic
 
@@ -279,10 +271,8 @@ def yes_get_grade_info(id):
     if id in driver_hash :
         driver = driver_hash[id]
     else :
-        print("현재 로그인 하지 않은 아이디 입니다")
+        print( "yes_get_grade_info : " + id + " | 현재 로그인 하지 않은 아이디 입니다")
         return []
-    
-    print(driver)
 
     driver.execute_script("changeLangage('kor');")
     time.sleep(1)
@@ -404,10 +394,7 @@ def yes_get_grade_info(id):
     
     get_grade_info_dic["상담"] = str(int(get_grade_info_dic["상담"]) + int(get_grade_info_dic["공학상담"]))
     
-    #get_grade_info_dic["공학인증"] = str(sum)
     grade_dic["getGradeInfo"] = get_grade_info_dic
-    #print(grade_dic)
-    #print(get_grade_info_dic)
     
     # 로그아웃
     if id in driver_hash :
@@ -415,10 +402,7 @@ def yes_get_grade_info(id):
         driver_hash[id].quit()
         del driver_hash[id]
     else :
-        print("현재 로그인 하지 않은 아이디 입니다")
-
-    print("logout")
-    print(driver_hash)
+        print( "yes_get_grade_info_logout : " + id + " | 현재 로그인 하지 않은 아이디 입니다")
 
     return grade_dic
 
@@ -430,7 +414,7 @@ def handle_client(connectionSock, addr):
     major = inputdic['major']
 
     id = inputdic['id']
-    print(id + major + req)
+    print( time.asctime(time.gmtime()) + " : " + id + " | " + req + " | " + major)
 
     if (req == "login") and (major == "abeek"): # 심컴이 로그인 요청
         pwd = inputdic['pwd']
@@ -477,21 +461,21 @@ def handle_client(connectionSock, addr):
             del driver_hash[id]
             outputdic = {"logout":"success"}
         else :
-            print("현재 로그인 하지 않은 아이디 입니다")
+            print( "logout request : " + id + " | 현재 로그인 하지 않은 아이디 입니다")
             outputdic = {"logout":"success"}
 
         jsonstr = json.dumps(outputdic)
         connectionSock.send(jsonstr.encode())
-        print("logout")
-        print(driver_hash)
 
     connectionSock.close()
 
     
 def server():
-    print("Starting server... test.py")
+    
+    print("Starting server...")
+    
     serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverSock.bind(('0.0.0.0', 3456))
+    serverSock.bind(('0.0.0.0', 4567))
     serverSock.listen()
     while True:
         (connectionSock, addr) = serverSock.accept()
@@ -500,4 +484,3 @@ def server():
         t.start()
 
 server()
-
