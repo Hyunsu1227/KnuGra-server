@@ -1,5 +1,4 @@
 from selenium import webdriver
-#from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -15,19 +14,20 @@ import socket
 import threading
 import requests
 import time
+import logging
 
-driver_hash = {} 
+driver_hash = {}
 
 NO_PROBLEM = 0
 ID_PASSWARD_INCORRECT = 1
 PASSWORD_CHANGE_DATE_THREE_MONTHS = 2
 EXCEPTION = 3
 
-def abeek_login(id, pwd): # abeek 사이트 접속 후 로그인
+def abeek_login(id, pwd): # abeek login
     if id in driver_hash :
         driver_hash[id].close()
         driver_hash[id].quit()
-        del driver_hash[id]  
+        del driver_hash[id]
 
     options = Options()
     options.add_argument("--headless")
@@ -38,7 +38,7 @@ def abeek_login(id, pwd): # abeek 사이트 접속 후 로그인
     options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", chrome_options=options)
     driver.get('http://abeek.knu.ac.kr/Keess/comm/support/login/loginForm.action')
-    #print(driver.current_url)
+
     try:
         idForm = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID,'usr_id')))
     except Exception as e:
@@ -84,9 +84,10 @@ def abeek_login(id, pwd): # abeek 사이트 접속 후 로그인
     return True, EXCEPTION
 
 def yes_login(id, pwd): # yes 사이트 접속 후 로그인
-    
-    if(id in driver_hash) :
-        return True
+    if id in driver_hash :
+        driver_hash[id].close()
+        driver_hash[id].quit()
+        del driver_hash[id]
 
     options = Options()
     options.add_argument("--headless")
@@ -98,6 +99,7 @@ def yes_login(id, pwd): # yes 사이트 접속 후 로그인
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", chrome_options=options)
     driver.get('http://yes.knu.ac.kr/comm/comm/support/main/main.action')
     #print(driver.current_url)
+    
     try:
         idForm = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID,'usr_id')))
     except Exception as e:
@@ -139,38 +141,6 @@ def yes_login(id, pwd): # yes 사이트 접속 후 로그인
     driver.close()
     driver.quit()
     return True, EXCEPTION
-
-def yes_get_personal_info(id):
-    if id in driver_hash :
-        driver = driver_hash[id]
-    else :
-        print("현재 로그인 하지 않은 아이디 입니다")
-        return []
-    
-    time.sleep(1)
-    driver.execute_script("changeLangage('kor');")
-    time.sleep(1)
-
-    driver.execute_script("launchMenu( 'SMAR', '2241', 'stuInfo', '/stud/smar/baseInfo/stuInfo/list.action' );")
-    time.sleep(1)
-
-    privacy_dic = {}
-    name = driver.find_element_by_css_selector("#stuInfo > table:nth-child(2) > tbody > tr:nth-child(1) > td:nth-child(4)")
-    privacy_dic["이름"] = name.text
-    stuid = driver.find_element_by_css_selector("#stuInfo > table:nth-child(2) > tbody > tr:nth-child(1) > td:nth-child(2)")
-    privacy_dic["학번"] = stuid.text
-    grade = driver.find_element_by_css_selector("#stuInfo > table:nth-child(2) > tbody > tr:nth-child(2) > td:nth-child(4)")
-    privacy_dic["학년"] = grade.text
-    major = driver.find_element_by_css_selector("#stuInfo > table:nth-child(2) > tbody > tr:nth-child(2) > td:nth-child(6)")
-    privacy_dic["소속"] = major.text
-    phonenumber = driver.find_element_by_css_selector("#stuInfo > table:nth-child(2) > tbody > tr:nth-child(6) > td:nth-child(4)")
-    privacy_dic["전화번호"] = phonenumber.text
-    email = driver.find_element_by_css_selector("#stuInfo > table:nth-child(2) > tbody > tr:nth-child(6) > td:nth-child(6)")
-    privacy_dic["이메일"] = email.text
-
-    print(privacy_dic)
-    
-    return privacy_dic
 
 def abeek_get_grade_info(id):
     if id in driver_hash :
@@ -224,116 +194,12 @@ def abeek_get_grade_info(id):
     grade_dic["completeSubjectList"] = complete_subject_list
     #print(grade_dic["completeSubjectList"])
 
-    '''
-    driver.execute_script("tab.selectTabPage( 'essentTab' );") # 필수과목 이수내역 클릭
-
-    time.sleep(1)
-    
-    req = driver.page_source
-    soup = BeautifulSoup(req, 'html.parser')
-    tr_list = soup.select('#essentPart > div > table > tbody > tr')
-    
-    subject_list = ["교과목번호","개설학과","교과목명","교과구분","학점","학기","평점"]
-
-    necessary_subject_list = []
-    i=0
-    j=0
-    for tr in tr_list:
-        td_list = tr.select("td")
-        if i >= 1:
-            subject_dic = {}
-            for td in td_list:
-                subject_dic[subject_list[j]] = td.text
-                j+=1
-            necessary_subject_list.append(subject_dic)
-        j=0
-        i+=1
-    if len(necessary_subject_list) >= 1:
-        del necessary_subject_list[-1]
-    grade_dic["requiredSubjectList"] = necessary_subject_list
-    #print(grade_dic["필수"])
-
-    driver.execute_script("tab.selectTabPage( 'designTab' );") # 설계과목 이수내역 클릭
-
-    time.sleep(1)
-
-    req = driver.page_source
-    soup = BeautifulSoup(req, 'html.parser')
-    tr_list = soup.select('#designPart > div > table > tbody > tr')
-
-    design_subject_list = []
-    i=0
-    j=0
-
-    for tr in tr_list:
-        td_list = tr.select("td")
-        if i >= 1:
-            subject_dic = {}
-            for td in td_list:
-                subject_dic[subject_list[j]] = td.text
-                j+=1
-            design_subject_list.append(subject_dic)
-        j=0
-        i+=1
-    if len(design_subject_list) >= 1:
-        del design_subject_list[-1]
-    grade_dic["designSubjectList"] = design_subject_list
-    #print(grade_dic["설계"])
-    '''
-
-    '''      
-    driver.execute_script("tab.selectTabPage( 'essentTab' );") # 필수과목 이수내역 클릭
-
-    time.sleep(1)
-
-    tr_list = driver.find_elements_by_css_selector('#essentPart > div > table > tbody > tr') # 필수과목 html table
-
-    subject_list = ["교과목번호","개설학과","교과목명","교과구분","학점","학기","평점"]
-    
-    necessary_subject_list = []
-    i=0
-    j=0
-    for tr in tr_list:
-        td_list = tr.find_elements_by_css_selector("td")
-        if i >= 1:
-            subject_dic = {}
-            for td in td_list:
-                subject_dic[subject_list[j]] = td.text
-                j+=1
-            necessary_subject_list.append(subject_dic)
-        j=0
-        i+=1
-    grade_dic["필수"] =  necessary_subject_list
-    #print(grade_dic["필수"])
-   
-    driver.execute_script("tab.selectTabPage( 'designTab' );") # 설계과목 이수내역 클릭
-
-    time.sleep(1)
-
-    tr_list = driver.find_elements_by_css_selector('#designPart > div > table > tbody > tr') # 설계과목 html table
-
-    design_subject_list = []
-    i=0
-    j=0
-    for tr in tr_list:
-        td_list = tr.find_elements_by_css_selector("td")
-        if i >= 1:
-            subject_dic = {}
-            for td in td_list:
-                subject_dic[subject_list[j]] = td.text
-                j+=1
-            design_subject_list.append(subject_dic)
-        j=0
-        i+=1
-    grade_dic["설계"] = design_subject_list
-    #print(grade_dic["설계"])
-    '''
     driver = driver_hash[id]
     driver.find_element_by_css_selector('#KEES_2242_stunFolder > a').click() # Keess>학생수강 및 비교과활동>비교과활동 화면전환
     driver.find_element_by_css_selector('#KEES_2241_stunNonsubjMngt > a').click()
     time.sleep(1)
 
-    this_scene = driver #비교과 활동 화면 
+    this_scene = driver #비교과 활동 화면
 
     get_grade_info_dic["영어성적"] = "fail"
     tr_list = driver.find_elements_by_css_selector('#gridM0 > div.data > table > tbody > tr')
@@ -400,7 +266,7 @@ def abeek_get_grade_info(id):
     if id in driver_hash :
         driver_hash[id].close()
         driver_hash[id].quit()
-        del driver_hash[id]        
+        del driver_hash[id]
     else :
         print("현재 로그인 하지 않은 아이디 입니다")
 
@@ -429,31 +295,6 @@ def yes_get_grade_info(id):
     req = driver.page_source
     soup = BeautifulSoup(req, 'html.parser')
     td_list = soup.select("#certRecAcadStatsGrid_0 > td")
-    '''
-    cheongSeong_culture_dic = {}
-    cheongSeong_basic_dic = {}
-    cheongSeong_core_dic = {}
-    cheongSeong_basic_list = ["독서와토론","사고교육","글쓰기","실용영어","소프트웨어"]
-    cheongSeong_core_list = ["인문사회", "자연과학"]
-    cheongSeong_culture_list = ["첨성인기초 - 독서와토론", "첨성인기초 - 사고교육", "첨성인기초 - 글쓰기", "첨성인기초 - 실용영어",
-        "첨성인기초 - 소프트웨어", "첨성인핵심 - 인문사회", "첨성인핵심 - 자연과학", "첨성인일반", "없음", "비고(인문교양)"]
-
-    
-    i = 0
-    if(len(td_list) > 0):
-        for td in td_list:
-            if td.text != '' and i <= 4:
-                cheongSeong_basic_dic[cheongSeong_basic_list[i]] = td.text
-            if td.text != '' and i <= 6 and i > 4 :
-                cheongSeong_core_dic[cheongSeong_core_list[i-5]] = td.text
-            if td.text != '' and i > 6 and i != 8:
-                cheongSeong_culture_dic[cheongSeong_culture_list[i]] = td.text
-            i+=1
-    
-    cheongSeong_culture_dic["첨성인기초"] = cheongSeong_basic_dic
-    cheongSeong_culture_dic["첨성인핵심"] = cheongSeong_core_dic
-    grade_dic["첨성인교양"] = cheongSeong_culture_dic
-    '''
 
     cheongSeong_basic_sum = 0
     cheongSeong_basic_software = 0
@@ -522,36 +363,45 @@ def yes_get_grade_info(id):
             sum += int(td.text)
         i += 1
     
+
+# 공학전공을 전공에 포함시키는 로직
     if("전공" in get_grade_info_dic) :
-        major = int(get_grade_info_dic[grade_list[grade_list.index("전공")]])
+        major = int(get_grade_info_dic["전공"])
     else :
         major = 0
     if "공학전공" in get_grade_info_dic :
-        major += int(get_grade_info_dic[grade_list[grade_list.index("공학전공")]])
+        major += int(get_grade_info_dic["공학전공"])
+
     get_grade_info_dic["전공"] = str(major)
 
+
+# 전공기반 및 기본소양 교양에 포함시키는 로직
     if("교양" in get_grade_info_dic) :
-        culture = int(get_grade_info_dic[grade_list[grade_list.index("교양")]])
+        culture = int(get_grade_info_dic["교양"])
     else :
         culture = 0
     
     if("전공기반" in get_grade_info_dic) :
-        culture += int(get_grade_info_dic[grade_list[grade_list.index("전공기반")]])
+        culture += int(get_grade_info_dic["전공기반"])
     if("기본소양" in get_grade_info_dic) :
-        culture += int(get_grade_info_dic[grade_list[grade_list.index("기본소양")]])
+        culture += int(get_grade_info_dic["기본소양"])
+
     get_grade_info_dic["교양"] = str(culture)
 
-    
-    get_grade_info_dic["전공"] = str(major)
-
-    driver.execute_script("launchMenu( 'SMAR', '2241', 'stuAdvcAll', '/stud/smar/advcStu/stuAdvcAll/list.action' );") 
+# 상담 및 공학상담
+    driver.execute_script("launchMenu( 'SMAR', '2241', 'stuAdvcAll', '/stud/smar/advcStu/stuAdvcAll/list.action' );")
     td_list = driver.find_elements_by_css_selector("#content > table > tbody > tr:nth-child(2) > td")
     
     i = 0
     counsel_list = ["상담","공학상담"]
+    
+    get_grade_info_dic["상담"] = '0'
+    get_grade_info_dic["공학상담"] = '0'
+
     for td in td_list :
         get_grade_info_dic[counsel_list[i]] = (td.text)[0]
         i += 1
+    
     get_grade_info_dic["상담"] = str(int(get_grade_info_dic["상담"]) + int(get_grade_info_dic["공학상담"]))
     
     #get_grade_info_dic["공학인증"] = str(sum)
@@ -563,7 +413,7 @@ def yes_get_grade_info(id):
     if id in driver_hash :
         driver_hash[id].close()
         driver_hash[id].quit()
-        del driver_hash[id]        
+        del driver_hash[id]
     else :
         print("현재 로그인 하지 않은 아이디 입니다")
 
@@ -573,16 +423,16 @@ def yes_get_grade_info(id):
     return grade_dic
 
 def handle_client(connectionSock, addr):
-    print("connect")
     data = connectionSock.recv(1024)
     inputdic = json.loads(data)
-    #print(inputdic)
 
     req = inputdic['requestType']
     major = inputdic['major']
-  
+
+    id = inputdic['id']
+    print(id + major + req)
+
     if (req == "login") and (major == "abeek"): # 심컴이 로그인 요청
-        id = inputdic['id']
         pwd = inputdic['pwd']
 
         login_on, errorCode = abeek_login(id,pwd)
@@ -590,20 +440,17 @@ def handle_client(connectionSock, addr):
             outputdic = {"login":"success"}
             jsonstr = json.dumps(outputdic)
         else:
-            outputdic = {"login":"fail" , "errorCode":errorCode} 
+            outputdic = {"login":"fail" , "errorCode":errorCode}
             jsonstr = json.dumps(outputdic)
 
-        connectionSock.send(jsonstr.encode()) 
+        connectionSock.send(jsonstr.encode())
     elif (req == "getGradeInfo") and (major == "abeek"): # 심컴이 성적 정보 요청
-        id = inputdic['id']
-
         outputdic = abeek_get_grade_info(id)
 
         jsonstr = json.dumps(outputdic)
 
         connectionSock.send(jsonstr.encode())
     elif (req == "login") and (major == "global"): # 글솦이 로그인 요청
-        id = inputdic['id']
         pwd = inputdic['pwd']
 
         login_on, errorCode = yes_login(id,pwd)
@@ -614,26 +461,15 @@ def handle_client(connectionSock, addr):
             outputdic = {"login":"fail", "errorCode":errorCode}
             jsonstr = json.dumps(outputdic)
 
-        connectionSock.send(jsonstr.encode()) 
+        connectionSock.send(jsonstr.encode())
     elif (req == "getGradeInfo") and (major == "global"): # 글솦이 성적 정보 요청
-        id = inputdic['id']
 
         outputdic = yes_get_grade_info(id)
 
         jsonstr = json.dumps(outputdic)
 
         connectionSock.send(jsonstr.encode())
-    elif (req == "getPersonalInfo") :
-        id = inputdic['id']
-
-        outputdic = yes_get_personal_info(id)
-
-        jsonstr = json.dumps(outputdic)
-
-        connectionSock.send(jsonstr.encode())
-
     elif (req == "logout") :
-        id = inputdic['id']
 
         if id in driver_hash :
             driver_hash[id].close()
@@ -645,7 +481,7 @@ def handle_client(connectionSock, addr):
             outputdic = {"logout":"success"}
 
         jsonstr = json.dumps(outputdic)
-        connectionSock.send(jsonstr.encode()) 
+        connectionSock.send(jsonstr.encode())
         print("logout")
         print(driver_hash)
 
