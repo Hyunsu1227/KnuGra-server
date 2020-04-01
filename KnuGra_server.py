@@ -36,7 +36,10 @@ def abeek_login(id, pwd): # abeek login
     prefs  = {"profile.managed_default_content_settings.images": 2,"profile.default_content_settings.images": 2}
     options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", chrome_options=options)
-    driver.get('http://abeek.knu.ac.kr/Keess/comm/support/login/loginForm.action')
+    try:
+        driver.get('http://abeek.knu.ac.kr/Keess/comm/support/login/loginForm.action')
+    except Exception as e:
+        print(e)
 
     try:
         idForm = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID,'usr_id')))
@@ -96,8 +99,10 @@ def yes_login(id, pwd): # yes 사이트 접속 후 로그인
     prefs  = {"profile.managed_default_content_settings.images": 2,"profile.default_content_settings.images": 2}
     options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", chrome_options=options)
-    driver.get('http://yes.knu.ac.kr/comm/comm/support/main/main.action')
-    
+    try:
+        driver.get('http://yes.knu.ac.kr/comm/comm/support/main/main.action')
+    except Exception as e:
+        print(e)
     
     try:
         idForm = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.ID,'usr_id')))
@@ -228,7 +233,7 @@ def abeek_get_grade_info(id):
             td_list = tr.find_elements_by_css_selector("td")
             if(len(td_list) > 1) :
                 
-                sum_filed_trip += int(td_list[3].text)
+                sum_filed_trip += int(float(td_list[3].text))
         i+=1
     
     driver = this_scene
@@ -475,7 +480,7 @@ def server():
     print("Starting server...")
     
     serverSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverSock.bind(('0.0.0.0', 4567))
+    serverSock.bind(('0.0.0.0', 3456))
     serverSock.listen()
     while True:
         (connectionSock, addr) = serverSock.accept()
